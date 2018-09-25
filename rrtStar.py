@@ -14,8 +14,18 @@ class RRTstar:
             z_nearest = self.nearest(z_rand)
             z_new = self.steer(z_nearest,z_rand)
             if(self.line_of_sight(z_new,z_nearest)):
-                #Z_near = self.near(z_new)
-                self.insert_node(z_nearest,z_new)
+                self.Nodes.add(z_new)
+                z_min = z_nearest
+                Z_near = self.near(z_new)
+                for z_near in Z_near:
+                    if(self.line_of_sight(z_near,z_new)):
+                        c = self.cost[x_near] + self.dist(z_near, z_new)
+                        if(c<self.cost[z_new]):
+                            z_min=z_near
+                for z_near in (Z_near - {z_min}):
+                    if(self.cost[z_near]>self.cost[z_new])+self.dist(z_new,z_near) and self.line_of_sight(z_new,z_near):
+                        
+                
         return self.T
         
     def near(self, z):
