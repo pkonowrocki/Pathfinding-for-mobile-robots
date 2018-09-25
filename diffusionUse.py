@@ -10,8 +10,8 @@ import matplotlib.pyplot as plot
 
 start_time = time.time()
 d = diff.Diffusion()
-d.imread('m.jpg')
-d.init(d.image,(1,1),(30,20))
+d.imread('map.jpg')
+d.init(d.image,(1,1),(511,511))
 d.diffuse()
 plot.imshow(d.tab2matrix())
 
