@@ -1,6 +1,7 @@
 import numpy as np
 import cv2 as cv
 import sys
+
 class RRTstar:
     def rrtStar(self, N):
         self.Nodes = set()
