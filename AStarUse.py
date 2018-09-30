@@ -1,15 +1,14 @@
 import time
-import diffusion as diff
+import AStar as diff
 import matplotlib.pyplot as plot
 import cv2 as cv
 
 start_time = time.time()
-
-d = diff.Diffusion()
+d = diff.AStar()
 d.imread('map.jpg')
 d.startend((1,1),(511,511))
 d.discretize(128,128)
-p=d.diffuse()
+p=d.astar()
 
 print("--- %s seconds ---" % (time.time() - start_time))
 

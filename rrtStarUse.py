@@ -22,3 +22,5 @@ plot.imshow(im)
 print("--- %s seconds ---" % (time.time() - start_time))
 
 cv.imwrite('tr.jpg',im)
+print(d.cost[d.end])
+p.items()

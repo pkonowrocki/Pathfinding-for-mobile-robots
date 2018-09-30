@@ -2,47 +2,54 @@ import numpy as np
 import cv2 as cv
 import sys
 class AStar:
+    
     def astar(self):
         self.c = set()
         self.o = set()
-        self.fScore[self.start_cell] = self.heuristic(self.start_cell)
-        self.parent = {}
-        self.parent[self.start_cell]=self.start_cell
-        while(len(self.o)>0):
-            x = min(self.o, key = lambda x:self.fScore[x])
-            if(x==self.end_cell):
-                return self.reconstruct_path(x)
-            self.o.remove(x)
-            self.c.add(x)
-            for(y in self.neighbours(x)):
+        self.cameFrom = {}
+        gScore={}
+        gScore[self.start_cell] = 0
+        fScore = {}
+        fScore[self.start_cell] = self.heuristic(self.start_cell)
+        self.o.add(self.start_cell)
+        while (len(self.o)>0):
+            curr = min(self.o, key = lambda x: fScore[x])
+            if(curr==self.end_cell):
+                return self.reconstruct_path()
+            self.o.remove(curr)
+            self.c.add(curr)
+            for y in self.neighbours(curr):
                 if(y[0]>=0 and y[0]<self.discrete.shape[0] and y[1]>=0 and y[1]<self.discrete.shape[1] and self.free(y)):
-                    if y not in self.c:
-                        if y not in self.o:
-                            self.o.add(y)
-                            self.fScore[y] = sys.maxsize
-                        
-
-        return None
+                    if y in self.c:
+                        continue
+                    tentative_gScore = gScore[curr] + self.dist(curr,y)
+                    if y not in self.o:
+                        self.o.add(y)
+                        gScore[y] = sys.maxsize
+                        fScore[y] = sys.maxsize
+                    elif (tentative_gScore >= gScore[y]):
+                        continue
+                    self.cameFrom[y] = curr
+                    gScore[y] = tentative_gScore
+                    fScore[y]= gScore[y]+self.heuristic(y)
+        
         
     
     
-    def reconstruct_path(self,s):
-        curr = s
+    def reconstruct_path(self):
+        curr = self.end_cell
         result = list()
         result.append(self.end[::-1])
-        while(curr!=self.parent[curr]):
+        while(curr!=self.start_cell):
             result.append((int(self.cell_m*(curr[1]+0.5)),int(self.cell_n*(curr[0]+0.5))))
-            curr = self.parent[curr]
+            curr = self.cameFrom[curr]
         result.append((int(self.cell_m*(curr[1]+0.5)),int(self.cell_n*(curr[0]+0.5))))
         result.append(self.start[::-1])
         return result
         
         
     def neighbours(self, x):
-        return  [(x[0]+1,x[1]),(x[0]-1,x[1]),(x[0],x[1]+1),(x[0],x[1]-1)]
-    
-    def neighbours_cross(self,x):
-        return [(x[0]-1,x[1]+1),(x[0]+1,x[1]-1),(x[0]-1,x[1]-1),(x[0]+1,x[1]+1)]
+        return  [(x[0]+1,x[1]),(x[0]-1,x[1]),(x[0],x[1]+1),(x[0],x[1]-1),(x[0]-1,x[1]+1),(x[0]+1,x[1]-1),(x[0]-1,x[1]-1),(x[0]+1,x[1]+1)]
     
     def dist(self, x,y):
         return abs(self.cell_n*(x[0]-y[0]))+abs(self.cell_n*(x[1]-y[1])) 
@@ -79,7 +86,7 @@ class AStar:
     
     
     def tab2matrix(self):        
-        n = np.ndarray([self.matrix.shape[0],self.matrix.shape[1]])
+        n = np.ndarray([self.discrete.shape[0],self.discrete.shape[1]])
         for p in self.donetab.keys():
             n[p[0],p[1]]=self.donetab[p]
         return n

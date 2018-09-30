@@ -10,24 +10,51 @@ class RRTstar:
         self.cost = {}
         self.cost[self.start] = 0
         self.insert_node(self.start, None)
-        for i in range(N):
+        i=0
+        while self.end not in self.Nodes:
+            #print(i)
+            #i=i+1
             z_rand = self.sampling()
             z_nearest = self.nearest(z_rand)
             z_new = self.steer(z_nearest,z_rand)
+            self.cost[z_new] = self.cost[z_nearest]+self.dist(z_nearest,z_new)
+            
             if(self.line_of_sight(z_new,z_nearest)):
                 self.Nodes.add(z_new)
                 z_min = z_nearest
                 Z_near = self.near(z_new)
+                
                 for z_near in Z_near:
                     if(self.line_of_sight(z_near,z_new)):
-                        c = self.cost[x_near] + self.dist(z_near, z_new)
+                        c = self.cost[z_near] + self.dist(z_near, z_new)
                         if(c<self.cost[z_new]):
                             z_min=z_near
-                for z_near in (Z_near - {z_min}):
-                    if(self.cost[z_near]>self.cost[z_new])+self.dist(z_new,z_near) and self.line_of_sight(z_new,z_near):
+                    
+                            
+                self.insert_node(z_min,z_new)
+             
+                self.rewire(Z_near,z_new, z_min)
+            if(self.line_of_sight(z_new, self.end)):
+               self.insert_node(z_new,self.end)
+               return self.T
                         
                 
         return self.T
+        
+    def rewire(self, Z_near, z_new, z_min):
+        for x_near in Z_near:
+           if(x_near!=z_min and self.line_of_sight(x_near, z_new) and self.cost[x_near]> self.cost[z_new] + self.dist(z_new,x_near)):
+               x_parent = self.parent(x_near)
+               self.delete_node(x_parent, x_near)
+               self.insert_node(z_new, x_near)
+               
+    def delete_node(self, parent, child):
+        self.T[parent].remove(child)
+           
+    def parent(self, x_child):
+        for key in self.T:
+            if x_child in self.T[key]:
+                return key
         
     def near(self, z):
         result = set()
@@ -37,13 +64,15 @@ class RRTstar:
         return result
         
     def steer(self, z_nearest, z_rand):
-        self.dq = 15
+        self.dq = 25
         if(z_rand==z_nearest):
             return z_rand
         z_new = (int(self.dq*(z_rand[0]-z_nearest[0])/self.dist(z_rand,z_nearest))+z_nearest[0],
                  int(self.dq*(z_rand[1]-z_nearest[1])/self.dist(z_rand,z_nearest))+z_nearest[1])
-        
-        return z_new
+        if(z_new[0]>=0 and z_new[0]<self.image.shape[0] and z_new[1]>=0 and z_new[1]<self.image.shape[1]):
+            return z_new
+        else:
+            return self.steer(z_nearest, self.sampling()) 
         
     def insert_node(self, parent, child):
         if(parent not in self.T.keys()):
@@ -64,8 +93,6 @@ class RRTstar:
         return n
         
     def line_of_sight(self, x, y):
-        print(x)
-        print(y)
         if(x[0]>y[0]):
             temp = y[0]
             y=(x[0],y[1])
