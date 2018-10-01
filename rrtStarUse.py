@@ -17,10 +17,13 @@ p = d.rrtStar(1000)
 
 for par in p.keys():
     for chil in p[par]:
-        cv.line(im,par[::-1],chil[::-1],120,1)
+        cv.line(im,par[::-1],chil[::-1],120,2)
+p =d.path()
+for i in range(len(p)-1):
+    cv.line(im,p[i+1][::-1],p[i][::-1],200,2)
+    
 plot.imshow(im)
 print("--- %s seconds ---" % (time.time() - start_time))
 
 cv.imwrite('tr.jpg',im)
 print(d.cost[d.end])
-p.items()

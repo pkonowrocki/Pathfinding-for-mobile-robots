@@ -10,10 +10,7 @@ class RRTstar:
         self.cost = {}
         self.cost[self.start] = 0
         self.insert_node(self.start, None)
-        i=0
         while self.end not in self.Nodes:
-            #print(i)
-            #i=i+1
             z_rand = self.sampling()
             z_nearest = self.nearest(z_rand)
             z_new = self.steer(z_nearest,z_rand)
@@ -34,7 +31,7 @@ class RRTstar:
                 self.insert_node(z_min,z_new)
              
                 self.rewire(Z_near,z_new, z_min)
-            if(self.line_of_sight(z_new, self.end)):
+            if(self.dist(z_new,self.end)<self.dq and self.line_of_sight(z_new, self.end)):
                self.insert_node(z_new,self.end)
                return self.T
                         
@@ -55,6 +52,16 @@ class RRTstar:
         for key in self.T:
             if x_child in self.T[key]:
                 return key
+    
+    def path(self):
+        res = list()
+        curr = self.end
+        
+        while(curr!=self.start):
+            res.append(curr)
+            curr = self.parent(curr)
+        res.append(self.start)
+        return res
         
     def near(self, z):
         result = set()
@@ -64,12 +71,12 @@ class RRTstar:
         return result
         
     def steer(self, z_nearest, z_rand):
-        self.dq = 25
+        self.dq = 50
         if(z_rand==z_nearest):
             return z_rand
         z_new = (int(self.dq*(z_rand[0]-z_nearest[0])/self.dist(z_rand,z_nearest))+z_nearest[0],
                  int(self.dq*(z_rand[1]-z_nearest[1])/self.dist(z_rand,z_nearest))+z_nearest[1])
-        if(z_new[0]>=0 and z_new[0]<self.image.shape[0] and z_new[1]>=0 and z_new[1]<self.image.shape[1]):
+        if(self.free(z_new)):#and z_new[0]>=0 and z_new[0]<self.image.shape[0] and z_new[1]>=0 and z_new[1]<self.image.shape[1]):
             return z_new
         else:
             return self.steer(z_nearest, self.sampling()) 
@@ -131,11 +138,13 @@ class RRTstar:
             return False
         
     def sampling(self):
-        x = (int(np.random.randint(0,self.image.shape[0])),
-             int(np.random.randint(0,self.image.shape[1])))
-        while(not self.free(x)):
-            x = (int(np.random.randint(0,self.image.shape[0])),
-             int(np.random.randint(0,self.image.shape[1])))
+#        x = (int(np.random.randint(0,self.image.shape[0])),
+#             int(np.random.randint(0,self.image.shape[1])))
+        x = (int(np.random.normal(self.end[0],self.image.shape[0]/2)),
+             int(np.random.normal(self.end[1],self.image.shape[1]/2)))
+#        while(not (x[0]>=0 and x[0]<self.image.shape[0] and x[1]>=0 and x[1]<self.image.shape[1])):
+#            x = (int(np.random.randint(0,self.image.shape[0])),
+#             int(np.random.randint(0,self.image.shape[1])))
         return x
     
     
