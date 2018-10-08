@@ -33,24 +33,25 @@ class ThetaStar:
         return None
     
     def line_of_sight(self, x, y):
-        if(x[0]>y[0]):
-            temp = y[0]
-            y=(x[0],y[1])
-            x = (temp,x[1])
-        if(x[1]>y[1]):
-            temp = y[1]
-            y = (y[0],x[1])
-            x = (x[0],temp)
-        kernel = np.zeros([int(abs(y[0]-x[0]))+1,int(abs(y[1]-x[1]))+1])
-        cv.line(kernel,(0,0),tuple(kernel.shape)[::-1],1,1)
-        if(kernel.shape[0]>0 and kernel.shape[1]>0):
-            kernel[0,0]=1
-            kernel[kernel.shape[0]-1,kernel.shape[1]-1]=1
-            if(np.sum(np.multiply(kernel, self.discrete[int(x[0]):int(y[0]+1),int(x[1]):int(y[1]+1)]))>0):
-                return False
+        if(x[0]==y[0]):
+            a=min([x[1],y[1]])
+            b=max([x[1],y[1]])+1
+            for i in range(int(a),int(b)):
+                if(self.discrete[int(x[0]),int(i)]):
+                    return False
+        else:
+            a=min([x[0],y[0]])
+            b=max([x[0],y[0]])+1
+            if(a==x[0]):
+                m=x[1]
             else:
-                return True
+                m=y[1]
+            for i in range(int(a),int(b)):
+                c=np.round(  (y[1]-x[1])/(y[0]-x[0])*(i-a)+m)
+                if(self.discrete[int(i),int(c)]):
+                    return False
         return True
+       
         
     def update_vertex(self, s, y):
         if(self.line_of_sight(self.parent[s], y)):
@@ -98,8 +99,8 @@ class ThetaStar:
         return self.image
     
     def startend(self, start, end):
-        self.start = (start[1],start[0])
-        self.end = (end[1],end[0])
+        self.start = start[::-1]
+        self.end = end[::-1]
     
     def free(self, x):
         return self.discrete[int(x[0]),int(x[1])]==0

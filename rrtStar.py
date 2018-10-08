@@ -10,7 +10,10 @@ class RRTstar:
         self.cost = {}
         self.cost[self.start] = 0
         self.insert_node(self.start, None)
+        i=0
         while self.end not in self.Nodes:
+            
+            i=i+1
             z_rand = self.sampling()
             z_nearest = self.nearest(z_rand)
             z_new = self.steer(z_nearest,z_rand)
@@ -71,15 +74,16 @@ class RRTstar:
         return result
         
     def steer(self, z_nearest, z_rand):
-        self.dq = 50
+        self.dq = 40
         if(z_rand==z_nearest):
             return z_rand
         z_new = (int(self.dq*(z_rand[0]-z_nearest[0])/self.dist(z_rand,z_nearest))+z_nearest[0],
                  int(self.dq*(z_rand[1]-z_nearest[1])/self.dist(z_rand,z_nearest))+z_nearest[1])
-        if(self.free(z_new)):#and z_new[0]>=0 and z_new[0]<self.image.shape[0] and z_new[1]>=0 and z_new[1]<self.image.shape[1]):
+        if(self.free(z_new)):
             return z_new
         else:
-            return self.steer(z_nearest, self.sampling()) 
+            return self.steer(z_nearest, self.sampling())
+        
         
     def insert_node(self, parent, child):
         if(parent not in self.T.keys()):
@@ -100,24 +104,23 @@ class RRTstar:
         return n
         
     def line_of_sight(self, x, y):
-        if(x[0]>y[0]):
-            temp = y[0]
-            y=(x[0],y[1])
-            x = (temp,x[1])
-        if(x[1]>y[1]):
-            temp = y[1]
-            y = (y[0],x[1])
-            x = (x[0],temp)
-        kernel = np.zeros([int(abs(y[0]-x[0]))+1,int(abs(y[1]-x[1]))+1])
-        cv.line(kernel,(0,0),tuple(kernel.shape)[::-1],1,1)
-        if(kernel.shape[0]>0 and kernel.shape[1]>0):
-            kernel[0,0]=1
-            kernel[kernel.shape[0]-1,kernel.shape[1]-1]=1
-            
-            if(np.sum(np.multiply(kernel, self.image[int(x[0]):int(y[0]+1),int(x[1]):int(y[1]+1)]))>0):
-                return False
+        if(x[0]==y[0]):
+            a=min([x[1],y[1]])
+            b=max([x[1],y[1]])+1
+            for i in range(a,b):
+                if(self.image[int(x[0]),int(i)]):
+                    return False
+        else:
+            a=min([x[0],y[0]])
+            b=max([x[0],y[0]])+1
+            if(a==x[0]):
+                m=x[1]
             else:
-                return True
+                m=y[1]
+            for i in range(a,b):
+                c=np.round(  (y[1]-x[1])/(y[0]-x[0])*(i-a)+m)
+                if(self.image[int(i),int(c)]):
+                    return False
         return True
     
     def dist(self, x,y):
@@ -133,15 +136,15 @@ class RRTstar:
     
     def free(self, x):
         if(x[0]>=0 and x[0]<self.image.shape[0] and x[1]>=0 and x[1]<self.image.shape[1]):
-            return self.image[int(x[0]),int(x[1])]==0
+            return not self.image[int(x[0]),int(x[1])]
         else:
             return False
         
     def sampling(self):
 #        x = (int(np.random.randint(0,self.image.shape[0])),
 #             int(np.random.randint(0,self.image.shape[1])))
-        x = (int(np.random.normal(self.end[0],self.image.shape[0]/2)),
-             int(np.random.normal(self.end[1],self.image.shape[1]/2)))
+        x = (int(np.random.normal(self.end[0],self.image.shape[0])),
+             int(np.random.normal(self.end[1],self.image.shape[1])))
 #        while(not (x[0]>=0 and x[0]<self.image.shape[0] and x[1]>=0 and x[1]<self.image.shape[1])):
 #            x = (int(np.random.randint(0,self.image.shape[0])),
 #             int(np.random.randint(0,self.image.shape[1])))
