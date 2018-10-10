@@ -12,7 +12,7 @@ import cv2 as cv
 d = t.RRTstar()
 start_time = time.time()
 im = d.imread('map.jpg')
-d.startend((1,1),(511,511))
+d.startend((511,1),(1,511))
 p = d.rrtStar(1000)
 
 for par in p.keys():

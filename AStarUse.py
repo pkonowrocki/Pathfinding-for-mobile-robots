@@ -6,8 +6,8 @@ import cv2 as cv
 start_time = time.time()
 d = diff.AStar()
 d.imread('map.jpg')
-d.startend((1,1),(511,511))
-d.discretize(128,128)
+d.startend((1,511),(511,1))
+d.discretize(64,64)
 p=d.astar()
 
 print("--- %s seconds ---" % (time.time() - start_time))
