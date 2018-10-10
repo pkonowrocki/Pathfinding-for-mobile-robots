@@ -11,7 +11,8 @@ class ThetaStar:
         self.o[self.start_cell] = self.gScore[self.start_cell]+self.heuristic(self.start_cell)
         self.c={}
         while len(self.o)>0:
-            s=self.o.popitem()[0]
+            s=min(self.o.keys(),key = lambda x:self.o[x])#self.o.popitem()[0]
+            self.o.pop(s)
             if s==self.end_cell:
                 self.res = list()
                 return self.reconstruct_path(s)
@@ -32,12 +33,14 @@ class ThetaStar:
                         self.update_vertex(s,y)
         return None
     
-    def line_of_sight(self, x, y):
+    def line_of_sight(self, x, y):        
+        x = ((x[0]+0.5)*self.cell_n,(x[1]+0.5)*self.cell_m)
+        y = ((y[0]+0.5)*self.cell_n,(y[1]+0.5)*self.cell_m)
         if(x[0]==y[0]):
             a=min([x[1],y[1]])
             b=max([x[1],y[1]])+1
             for i in range(int(a),int(b)):
-                if(self.discrete[int(x[0]),int(i)]):
+                if(self.image[int(x[0]),int(i)]):
                     return False
         else:
             a=min([x[0],y[0]])
@@ -47,8 +50,8 @@ class ThetaStar:
             else:
                 m=y[1]
             for i in range(int(a),int(b)):
-                c=np.round(  (y[1]-x[1])/(y[0]-x[0])*(i-a)+m)
-                if(self.discrete[int(i),int(c)]):
+                c=np.floor(  (y[1]-x[1])/(y[0]-x[0])*(i-a)+m)
+                if(self.image[int(i),int(c)]):
                     return False
         return True
        
@@ -89,6 +92,7 @@ class ThetaStar:
     
     def dist(self, x,y):
         return abs(self.cell_n*(x[0]-y[0]))+abs(self.cell_n*(x[1]-y[1])) 
+    
     def heuristic(self, x):
         return abs(x[0]-self.end_cell[0])+abs(x[1]-self.end_cell[1])
     
