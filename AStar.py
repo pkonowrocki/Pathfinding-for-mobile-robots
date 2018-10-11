@@ -53,6 +53,7 @@ class AStar:
     
     def dist(self, x,y):
         return abs(self.cell_n*(x[0]-y[0]))+abs(self.cell_n*(x[1]-y[1])) 
+    
     def heuristic(self, x):
         return abs(x[0]-self.end_cell[0])+abs(x[1]-self.end_cell[1])
     

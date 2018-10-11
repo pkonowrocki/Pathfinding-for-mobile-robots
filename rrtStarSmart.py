@@ -1,3 +1,10 @@
+# -*- coding: utf-8 -*-
+"""
+Created on Wed Oct 10 15:27:41 2018
+
+@author: pkonowrocki
+"""
+
 import numpy as np
 import cv2 as cv
 import sys
