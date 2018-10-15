@@ -74,7 +74,7 @@ class RRTstar:
         return result
         
     def steer(self, z_nearest, z_rand):
-        self.dq = 20
+        self.dq = 40
         if(z_rand==z_nearest):
             return z_rand
         z_new = (int(self.dq*(z_rand[0]-z_nearest[0])/self.dist(z_rand,z_nearest))+z_nearest[0],
@@ -161,6 +161,25 @@ class RRTstar:
                 n.append(res[i-1])
         n.append(res[len(res)-1])
         return n
+    
+    def shorten2(self):
+        n=list()
+        res = self.path()
+        n.append(res[0])
+        curr = res[0]
+        res=res[::-1]
+        while not (curr==self.start):
+            print("")
+            print(curr)
+            print("")
+            for i in res:
+                print(i)
+                if(self.line_of_sight(i,curr)):
+                    curr=i
+                    n.append(i)
+                    print(n)
+        return n
+            
             
     
    
