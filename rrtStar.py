@@ -69,12 +69,12 @@ class RRTstar:
     def near(self, z):
         result = set()
         for i in self.Nodes:
-            if(self.dist(z,i)<30):
+            if(self.dist(z,i)<3):
                 result.add(i)
         return result
         
     def steer(self, z_nearest, z_rand):
-        self.dq = 40
+        self.dq = 3
         if(z_rand==z_nearest):
             return z_rand
         z_new = (int(self.dq*(z_rand[0]-z_nearest[0])/self.dist(z_rand,z_nearest))+z_nearest[0],
@@ -136,15 +136,15 @@ class RRTstar:
     
     def free(self, x):
         if(x[0]>=0 and x[0]<self.image.shape[0] and x[1]>=0 and x[1]<self.image.shape[1]):
-            return not self.image[int(x[0]),int(x[1])]
+            return self.image[int(x[0]),int(x[1])]==0
         else:
             return False
         
     def sampling(self):
-#        x = (int(np.random.randint(0,self.image.shape[0])),
-#             int(np.random.randint(0,self.image.shape[1])))
-        x = (int(np.random.normal(self.end[0],self.image.shape[0])),
-             int(np.random.normal(self.end[1],self.image.shape[1])))
+        x = (int(np.random.randint(0,self.image.shape[0])),
+             int(np.random.randint(0,self.image.shape[1])))
+#        x = (int(np.random.normal(self.end[0],self.image.shape[0])),
+#             int(np.random.normal(self.end[1],self.image.shape[1])))
 #        while(not (x[0]>=0 and x[0]<self.image.shape[0] and x[1]>=0 and x[1]<self.image.shape[1])):
 #            x = (int(np.random.randint(0,self.image.shape[0])),
 #             int(np.random.randint(0,self.image.shape[1])))

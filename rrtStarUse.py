@@ -13,7 +13,8 @@ import numpy
 d = t.RRTstar()
 start_time = time.time()
 print(start_time)
-im = d.imread('3.jpg')
+im = d.imread('map.jpg')
+#d.image = 
 d.startend((399,1),(1,399))
 p = d.rrtStar(1000)
 pa =d.path()
