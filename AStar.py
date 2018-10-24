@@ -32,19 +32,19 @@ class AStar:
                     self.cameFrom[y] = curr
                     gScore[y] = tentative_gScore
                     fScore[y]= gScore[y]+self.heuristic(y)
-        
+        return None
         
     
     
     def reconstruct_path(self):
         curr = self.end_cell
         result = list()
-        result.append(self.end[::-1])
+        #result.append(self.end[::-1])
         while(curr!=self.start_cell):
             result.append((int(self.cell_m*(curr[1]+0.5)),int(self.cell_n*(curr[0]+0.5))))
             curr = self.cameFrom[curr]
         result.append((int(self.cell_m*(curr[1]+0.5)),int(self.cell_n*(curr[0]+0.5))))
-        result.append(self.start[::-1])
+        #result.append(self.start[::-1])
         return result
         
         

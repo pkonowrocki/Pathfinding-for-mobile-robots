@@ -51,7 +51,7 @@ class ThetaStar:
                 m=y[1]
             for i in range(int(a),int(b)):
                 c=np.floor(  (y[1]-x[1])/(y[0]-x[0])*(i-a)+m)
-                if(self.image[int(i),int(c)]):
+                if(c<self.discrete.shape[1] and self.image[int(i),int(c)]):
                     return False
         return True
        
@@ -75,12 +75,12 @@ class ThetaStar:
     def reconstruct_path(self,s):
         curr = s
         result = list()
-        result.append(self.end[::-1])
+        #result.append(self.end[::-1])
         while(curr!=self.parent[curr]):
             result.append((int(self.cell_m*(curr[1]+0.5)),int(self.cell_n*(curr[0]+0.5))))
             curr = self.parent[curr]
         result.append((int(self.cell_m*(curr[1]+0.5)),int(self.cell_n*(curr[0]+0.5))))
-        result.append(self.start[::-1])
+        #result.append(self.start[::-1])
         return result
         
         
