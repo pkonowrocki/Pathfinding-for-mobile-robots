@@ -63,14 +63,16 @@ running_loss=0.0
 time0 = time.time()
 last_time = time0
 for epoch in range(1000):
-    for i in range(3500):
-        r = pickle.load(open('data/map'+str(i)+'.p','rb'))
+    for i in range(500):
+        r = pickle.load(open('training/map'+str(i)+'.p','rb'))
         optimizer.zero_grad()
         outputs = net(torch.from_numpy(r.INPUT).float(), torch.from_numpy(r.S1).long(), torch.from_numpy(r.S2).long() )
         loss = criterion(outputs,torch.from_numpy(r.OUTPUT).float())
         loss.backward()
         optimizer.step()
         running_loss += loss.item()/len(r.S2)
-        if(i%50==49):
-            print('Epoch: ['+str(epoch+1)+'/1000] Paths: ['+str(i+1)+'/3500], Loss: '+str(running_loss/(i+1))+', Time elapsed: '+str(np.round(time.time()-last_time))+'[s], Time left: '+str( np.round((time.time()-time0)*(1000*3500/(epoch+1)/(i+1))) ))
+        if(i%10==9):
+            time_elapsed = np.round(time.time()-last_time)
+            time_all = np.round((time.time()-time0)*(1000*500/(epoch+1)/(i+1)))
+            print('Epoch: ['+str(epoch+1)+'/1000] Maps: ['+str(i+1)+'/500], Loss: '+str(running_loss/(i+1))+', Time elapsed: '+str(time_elapsed)+'[s], Time left: '+str(time_all-time_elapsed)+'[s] => '+str(np.round(time_elapsed/time_all*100))+'%')
     running_loss=0.0        

@@ -103,31 +103,35 @@ class Record():
 
 zero_time = time.time()
 x=0
-iter=0
+
 for x in range(500):
     start_time = time.time()
-    print("["+str(x)+"]")
+
     
     n = GenerateMap(x)    
-    print("MAP GENERATED")
-    
+
+    record = Record()
+    record.INPUT = np.zeros([1,2,40,40])
+    record.S1 = np.zeros([1])
+    record.S2 = np.zeros([1])
+    record.OUTPUT = np.zeros([1,8])
     for i in range(7):
-        print("["+str(x)+"]"+"["+str(i)+"]")
+        
         start, end = GenerateStartEnd()
         n[(1,end[0],end[1])] = 1
-        print("START END DONE")
         
         S = GenerateThetaStar()
-        print("THETA* DONE")
-        record = Record()
-        record.OUTPUT = GenerateVector(S)
-        record.S1 = S[:-1,0]
-        record.S2 = S[:-1,1]
-        record.INPUT = np.expand_dims(n,axis=0)
-        for _ in range(len(record.S1)-1):
+        
+        
+        record.OUTPUT = np.append(record.OUTPUT, GenerateVector(S), axis=0)
+        record.S1 = np.append(record.S1, S[:-1,0], axis=0)
+        record.S2 = np.append(record.S2, S[:-1,1], axis=0)
+        for _ in range(len(S[:-1,0])):
             record.INPUT =  np.append(record.INPUT, np.expand_dims(n,axis=0), axis=0)
-        pickle.dump(record, open("data/map"+str(iter)+".p", "wb"))
-        iter=iter+1
-    print("Time: "+str(time.time()-start_time))
-    remaining_time = (499-x)*(time.time()-zero_time)/(x+1)
-    print("Remaining time:" + str(remaining_time))
+    record.INPUT = record.INPUT[1:,:,:,:]
+    record.S1 = record.S1[1:]
+    record.S2 = record.S2[1:]
+    record.OUTPUT = record.OUTPUT[1:,:]
+    pickle.dump(record, open("training/map"+str(x)+".p", "wb"))  
+    remaining_time = 500*(time.time()-zero_time)/(x+1)
+    print('['+str(x)+'/500] Time for a map: '+str(time.time()-start_time)+'[s] Remaining time:' + str(remaining_time)+'[s]')
