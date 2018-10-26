@@ -61,7 +61,7 @@ class VIN(nn.Module):
         return res
     
 device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
-print('device')
+print(device)
 
 net = VIN().to(device)
 criterion = nn.L1Loss(True,True).to(device)
