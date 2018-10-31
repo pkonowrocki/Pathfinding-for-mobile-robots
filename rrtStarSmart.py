@@ -9,43 +9,39 @@ import numpy as np
 import cv2 as cv
 import sys
 
-class RRTstar:
-    def rrtStar(self, N):
+class RRTstarSmart:
+
+    def compute(self, N):
         self.Nodes = set()
-        #self.Nodes.add(self.end)
         self.T = {}
         self.cost = {}
         self.cost[self.start] = 0
         self.insert_node(self.start, None)
-        
-        while True:
-            
-            
-            z_rand = self.sampling()
-            z_nearest = self.nearest(z_rand)
-            z_new = self.steer(z_nearest,z_rand)
-            self.cost[z_new] = self.cost[z_nearest]+self.dist(z_nearest,z_new)
-            
-            if(self.line_of_sight(z_new,z_nearest)):
-                self.Nodes.add(z_new)
-                z_min = z_nearest
-                Z_near = self.near(z_new)
-                
-                for z_near in Z_near:
-                    if(self.line_of_sight(z_near,z_new)):
-                        c = self.cost[z_near] + self.dist(z_near, z_new)
-                        if(c<self.cost[z_new]):
-                            z_min=z_near
-                    
-                            
-                self.insert_node(z_min,z_new)
-             
-                self.rewire(Z_near,z_new, z_min)
-            if(self.dist(z_new,self.end)<self.dq and self.line_of_sight(z_new, self.end)):
-               self.insert_node(z_new,self.end)
-               return self.T
-                        
-                
+        i=0
+        feasible_path = False
+        while(i<N or not feasible_path):
+            if((i-n)%b!=0):
+                i=i+1
+                z_rand = self.sampling()
+                z_nearest = self.nearest(z_rand)
+                z_new = self.steer(z_nearest,z_rand)
+                self.cost[z_new] = self.cost[z_nearest]+self.dist(z_nearest,z_new)
+                if(self.line_of_sight(z_new,z_nearest)):
+                    self.Nodes.add(z_new)
+                    z_min = z_nearest
+                    Z_near = self.near(z_new)
+                    for z_near in Z_near:
+                        if(self.line_of_sight(z_near,z_new)):
+                            c = self.cost[z_near] + self.dist(z_near, z_new)
+                            if(c<self.cost[z_new]):
+                                z_min=z_near
+                    self.insert_node(z_min,z_new)
+                    self.rewire(Z_near,z_new, z_min)
+                    if(self.dist(z_new,self.end)<self.dq and self.line_of_sight(z_new, self.end)):
+                        feasible_path=True
+                        self.insert_node(z_new,self.end)
+            else:
+                z_rand = 
         return self.T
         
     def rewire(self, Z_near, z_new, z_min):

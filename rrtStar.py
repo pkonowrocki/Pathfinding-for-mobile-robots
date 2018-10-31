@@ -3,47 +3,40 @@ import cv2 as cv
 import sys
 
 class RRTstar:
-    def rrtStar(self, N):
+
+    def compute(self, N):
         self.Nodes = set()
-        #self.Nodes.add(self.end)
         self.T = {}
         self.cost = {}
         self.cost[self.start] = 0
         self.insert_node(self.start, None)
-        
-        while True:
-            
-            
+        i=0
+        feasible_path = False
+        while(i<N or not feasible_path):
+            i=i+1
             z_rand = self.sampling()
             z_nearest = self.nearest(z_rand)
             z_new = self.steer(z_nearest,z_rand)
             self.cost[z_new] = self.cost[z_nearest]+self.dist(z_nearest,z_new)
-            
             if(self.line_of_sight(z_new,z_nearest)):
                 self.Nodes.add(z_new)
                 z_min = z_nearest
                 Z_near = self.near(z_new)
-                
                 for z_near in Z_near:
                     if(self.line_of_sight(z_near,z_new)):
                         c = self.cost[z_near] + self.dist(z_near, z_new)
                         if(c<self.cost[z_new]):
                             z_min=z_near
-                    
-                            
                 self.insert_node(z_min,z_new)
-             
                 self.rewire(Z_near,z_new, z_min)
-            if(self.dist(z_new,self.end)<self.dq and self.line_of_sight(z_new, self.end)):
-               self.insert_node(z_new,self.end)
-               return self.T
-                        
-                
+                if(self.dist(z_new,self.end)<self.dq and self.line_of_sight(z_new, self.end)):
+                    feasible_path=True
+                    self.insert_node(z_new,self.end)
         return self.T
         
     def rewire(self, Z_near, z_new, z_min):
         for x_near in Z_near:
-           if(x_near!=z_min and self.line_of_sight(x_near, z_new) and self.cost[x_near]> self.cost[z_new] + self.dist(z_new,x_near)):
+           if(x_near!=z_min and self.line_of_sight(x_near, z_new) and self.cost[x_near] > self.cost[z_new] + self.dist(z_new,x_near)):
                x_parent = self.parent(x_near)
                self.delete_node(x_parent, x_near)
                self.insert_node(z_new, x_near)
@@ -59,7 +52,6 @@ class RRTstar:
     def path(self):
         res = list()
         curr = self.end
-        
         while(curr!=self.start):
             res.append(curr)
             curr = self.parent(curr)
@@ -141,13 +133,10 @@ class RRTstar:
             return False
         
     def sampling(self):
-        x = (int(np.random.randint(0,self.image.shape[0])),
-             int(np.random.randint(0,self.image.shape[1])))
-#        x = (int(np.random.normal(self.end[0],self.image.shape[0])),
-#             int(np.random.normal(self.end[1],self.image.shape[1])))
-#        while(not (x[0]>=0 and x[0]<self.image.shape[0] and x[1]>=0 and x[1]<self.image.shape[1])):
-#            x = (int(np.random.randint(0,self.image.shape[0])),
+#        x = (int(np.random.randint(0,self.image.shape[0])),
 #             int(np.random.randint(0,self.image.shape[1])))
+        x = (int(np.random.normal(self.end[0],self.image.shape[0])),
+             int(np.random.normal(self.end[1],self.image.shape[1])))
         return x
     
     def shorten(self):
@@ -169,15 +158,10 @@ class RRTstar:
         curr = res[0]
         res=res[::-1]
         while not (curr==self.start):
-            print("")
-            print(curr)
-            print("")
             for i in res:
-                print(i)
                 if(self.line_of_sight(i,curr)):
                     curr=i
                     n.append(i)
-                    print(n)
         return n
             
             
