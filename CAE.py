@@ -97,7 +97,7 @@ def train(epochs,maps,batchsize):
             loss.backward()
             optimizer.step()
             running_loss += loss.item()
-        torch.save(cae,'cae_'+str(epoch)+'.pth')
+        torch.save(cae,'cae_models/cae_'+str(epoch)+'.pth')
         time_elapsed = time.time()-last_time
         time_all = (time.time()-time0)*(epochs/(epoch+1))
         print('Epoch: ['+str(epoch+1)+'/'+str(epochs)+'] Loss: '+str(np.round(running_loss/(maps),6))+', Time elapsed: '+str(np.round(time_elapsed,1))+'[s], Time left: '+str(np.round(time_all-time_elapsed,1))+'[s] => '+str(np.round(time_elapsed/time_all*100,3))+'%')
