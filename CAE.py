@@ -121,7 +121,7 @@ def test(epochs,maps):
         plot.plot(running_loss)
         plot.show()
 
-train(2000,30000,1000)
+train(2000,30000,10)
 #test(1000,1000)
 cae = torch.load('cae_models/cae_999.pth', map_location=device)
 criterion = nn.BCELoss()

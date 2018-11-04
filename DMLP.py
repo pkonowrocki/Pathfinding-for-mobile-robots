@@ -1,69 +1,165 @@
+import torch
 import torch.nn as nn
+import torch.nn.functional as F
 import torch.optim as optim
 from torch.autograd import Variable
-import torch.nn.functional as F
+import numpy as np
 import pickle
+import time
+import matplotlib.pyplot as plt
+import ThetaStar
+import cv2 as cv
+Theta = ThetaStar.ThetaStar()
+
+def NotFeasible(start,end,n):
+        Theta.image = n[0,:,:]*255
+        Theta.startend(start,end)
+        Theta.discretize(40,40)
+        return Theta.theta()==None
+
+def GenerateStartEnd(n):
+    start = (np.random.randint(0,40),np.random.randint(0,40))
+    end = (np.random.randint(0,40),np.random.randint(0,40))
+    while(start==end or n[(0,start[0],start[1])]==1 or n[(0,end[0],end[1])]==1 or NotFeasible(start,end,n)):
+        start = (np.random.randint(0,40),np.random.randint(0,40))
+        end = (np.random.randint(0,40),np.random.randint(0,40))
+    return start, end
+
+
+def GenerateMap():
+    tempmap = np.zeros([10,10])
+    for i in range(np.random.randint(15,65)):
+        temp = (np.random.randint(0,10), np.random.randint(0,10))
+        tempmap[temp]=1
+    tempmap = np.expand_dims(np.round(cv.resize(tempmap,(40,40))),0)
+    return tempmap
+
+def GenerateSet(size):
+    res = list()
+    for i in range(size):
+        m = GenerateMap()
+        start, end = GenerateStartEnd(m)
+        S = Theta.theta()
+        res.append((m,start,end,S[::-1]))
+    return res
+        
+class Record():
+    def __init__(self):
+        self.S1=None
+        self.S2=None
+        self.OUTPUT=None
+        self.INPUT=None
+
 class DMLP(nn.Module):
     def __init__(self):
-        super(DMLP,self).__init__()
-        self.fc1 = nn.Linear(30,1280)
-        self.p1 = nn.PReLU(1280)
-        self.fc2 = nn.Linear(1280,1024)
-        self.p2 = nn.PReLU(1024)
-        self.fc3 = nn.Linear(1024,896)
-        self.p3 = nn.PReLU(896)
-        self.fc4 = nn.Linear(896,768)
-        self.p4 = nn.PReLU(768)
-        self.fc5 = nn.Linear(768,512)
-        self.p5 = nn.PReLU(512)
-        self.fc6 = nn.Linear(512,384)
-        self.p6 = nn.PReLU(384)
-        self.fc7 = nn.Linear(384,256)
-        self.p7 = nn.PReLU(256)
-        self.fc8 = nn.Linear(256,256)
-        self.p8 = nn.PReLU(256)
-        self.fc9 = nn.Linear(256,128)
-        self.p9 = nn.PReLU(128)
-        self.fc10 = nn.Linear(128,64)
-        self.p10 = nn.PReLU(64)
-        self.fc11 = nn.Linear(64,32)
-        self.p11 = nn.PReLU(32)
-        self.fc12 = nn.Linear(32,2)
+        super(DMLP,self).__init__()        
+        self.Linear0 = nn.Linear(34,1280)
+        self.PRELU0 = nn.PReLU()
+        self.Dropout0 = nn.Dropout()
         
-    def forward(self, x):
-        x = F.dropout(self.p1(self.fc1(x)))
-        x = F.dropout(self.p2(self.fc2(x)))
-        x = F.dropout(self.p3(self.fc3(x)))
-        x = F.dropout(self.p4(self.fc4(x)))
-        x = F.dropout(self.p5(self.fc5(x)))
-        x = F.dropout(self.p6(self.fc6(x)))
-        x = F.dropout(self.p7(self.fc7(x)))
-        x = F.dropout(self.p8(self.fc8(x)))
-        x = F.dropout(self.p9(self.fc9(x)))
-        x = self.p10(self.fc10(x))
-        x = self.p11(self.fc11(x))
-        return self.fc12(x)
+        self.Linear1 = nn.Linear(1280,1024)
+        self.PRELU1 = nn.PReLU()
+        self.Dropout1 = nn.Dropout()
+        
+        self.Linear2 = nn.Linear(1024,896)
+        self.PRELU2 = nn.PReLU()
+        self.Dropout2 = nn.Dropout()
+        
+        self.Linear3 = nn.Linear(896,768)
+        self.PRELU3 = nn.PReLU()
+        self.Dropout3 = nn.Dropout()
+        
+        self.Linear4 = nn.Linear(768,512)
+        self.PRELU4 = nn.PReLU()
+        self.Dropout4 = nn.Dropout()
+        
+        self.Linear5 = nn.Linear(512,384)
+        self.PRELU5 = nn.PReLU()
+        self.Dropout5 = nn.Dropout()
+        
+        self.Linear6 = nn.Linear(384,256)
+        self.PRELU6 = nn.PReLU()
+        self.Dropout6 = nn.Dropout()
+        
+        self.Linear7 = nn.Linear(256,256)
+        self.PRELU7 = nn.PReLU()
+        self.Dropout7 = nn.Dropout()
+        
+        self.Linear8 = nn.Linear(256,128)
+        self.PRELU8 = nn.PReLU()
+        self.Dropout8 = nn.Dropout()
+        
+        self.Linear9 = nn.Linear(128,64)
+        self.PRELU9 = nn.PReLU()
+        self.Dropout9 = nn.Dropout()
+        
+        self.Linear10 = nn.Linear(64,32)
+        self.PRELU10 = nn.PReLU()
+        
+        self.Linear11 = nn.Linear(32,2)
+        self.PRELU11 = nn.PReLU()
+        
+    def forward(self, X):        
+        X = self.PRELU0(self.Linear0(X))
+        #X = self.Dropout0(X)
+        X = self.PRELU1(self.Linear1(X))
+        #X = self.Dropout1(X)
+        X = self.PRELU2(self.Linear2(X))
+#        X = self.Dropout2(X)
+        X = self.PRELU3(self.Linear3(X))
+  #      X = self.Dropout3(X)
+        X = self.PRELU4(self.Linear4(X))
+   #     X = self.Dropout4(X)
+        X = self.PRELU5(self.Linear5(X))
+    #    X = self.Dropout5(X)
+        X = self.PRELU6(self.Linear6(X))
+     #   X = self.Dropout6(X)
+        X = self.PRELU7(self.Linear7(X))
+      #  X = self.Dropout7(X)
+        X = self.PRELU8(self.Linear8(X))
+       # X = self.Dropout8(X)
+        X = self.PRELU9(self.Linear9(X))
+        #X = self.Dropout9(X)
+        X = self.PRELU10(self.Linear10(X))
+        X = self.PRELU11(self.Linear11(X))
+        return X
     
-    
-dmlp = DMLP()
-pickle.dump(dmlp,open('dmlp.p','wb'))
-criterion = nn.MSELoss(True, True)
-optimizer = optim.Adagrad(dmlp.parameters(),0.1)
+device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
+print(device)
+
+def train(epochs, maps):
+    net = DMLP().to(device)
+    cae = torch.load('cae_models/cae_980.pth', map_location=device)
+    criterion = nn.MSELoss().to(device)
+    optimizer = optim.Adagrad(net.parameters(),0.1)
+    maps=2
+    training = GenerateSet(maps)
+    running_loss=0.0
+    time0 = time.time()
+    last_time = time0
+    for epoch in range(epochs):
+        for i in range(maps):
+            i=0
+            INPUT = torch.cat((cae(torch.from_numpy(training[i][0][0,:,:]).float())[0],torch.tensor([[training[i][1][0],training[i][1][1],training[i][2][0],training[i][2][1]]]).float()),1)
+            OUTPUT = torch.tensor(training[i][3])
+            for _ in range(len(training[i][3])-1):
+                print(cae(torch.from_numpy(training[i][0][0,:,:]).float())[0])
+                INPUT = torch.cat((INPUT, 
+                                   torch.cat((cae(torch.from_numpy(training[i][0][0,:,:]).float())[0],torch.tensor([[training[i][1][0],training[i][1][1],training[i][2][0],training[i][2][1]]]).float()),1)),0)
+            optimizer.zero_grad()
+            outputs = net(INPUT).to(device)
+            loss = criterion(outputs,OUTPUT.float().to(device)).to(device)
+            loss.backward()
+            optimizer.step()
+            running_loss += loss.item()/len(training[i][3])
+        time_elapsed = time.time()-last_time
+        time_all = (time.time()-time0)*(epochs/(epoch+1))
+        print('Epoch: ['+str(epoch+1)+'/'+str(epochs)+']\tLoss: '+str(np.round(running_loss/(maps),6))+',\tTime elapsed: '+str(np.round(time_elapsed,1))+'[s],\tTime left: '+str(np.round(time_all-time_elapsed,1))+'[s]\t=>'+str(np.round(time_elapsed/time_all*100,3))+'%')        
+        running_loss=0.0  
+        torch.save(net,'dmlp_models/dmlp_e'+str(epoch)+'.pth')
 
 
-for epoch in range(3):
-    running_loss = 0
-    for i in range(30000):
-        inputs
-        optimizer.zero_grad()
-        outputs = dmlp(inputs)
-        loss = criterion(outputs,inputs) 
-        loss.backward()
-        optimizer.step()
-        running_loss+=loss.item()
-        if i % 2000 == 1999:    # print every 2000 mini-batches
-            print('[%d, %5d] loss: %.3f' %
-                  (epoch + 1, i + 1, running_loss / 2000))
-            running_loss = 0.0
-print('Finished')
-pickle.dump(cae,open('cae_sgd.p','wb'))
+
+
+train(2000,1)
+

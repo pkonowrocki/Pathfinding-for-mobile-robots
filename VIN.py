@@ -14,6 +14,8 @@ class Record():
         self.S2=None
         self.OUTPUT=None
         self.INPUT=None
+        self.START = None
+        self.END = None
 
 class VIN(nn.Module):
     def __init__(self):
@@ -56,7 +58,7 @@ print(device)
 def train(epochs, maps):
     net = VIN().to(device)
     criterion = nn.MSELoss().to(device)
-    optimizer = optim.Adam(net.parameters(),0.01)
+    optimizer = optim.Adagrad(net.parameters(),0.1)
     running_loss=0.0
     time0 = time.time()
     last_time = time0
@@ -137,6 +139,6 @@ def test_epoch(epoch, maps):
                     break
         print('VIN model after '+str(epoch+1)+' epochs,\tdone maps: ['+str(DONE)+'/'+str(maps)+']')
 
-train(2000,2450)
+train(2000,1450)
 
 test(2000,10,150)
