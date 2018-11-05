@@ -10,7 +10,7 @@ import matplotlib.pyplot as plt
 import ThetaStar
 import AStar
 import cv2 as cv
-import CAE
+
 
 Theta = ThetaStar.ThetaStar()
 A = AStar.AStar()
@@ -173,7 +173,7 @@ print(device)
 
 def train(epochs, maps):
     net = DMLP().to(device)
-    cae = torch.load('cae_models/cae_2.pth', map_location=device)
+    cae = torch.load('cae_models/cae_0.pth', map_location=device)
     criterion = nn.BCELoss().to(device)
     optimizer = optim.Adagrad(net.parameters(),0.1)
     running_loss=0.0
@@ -197,6 +197,6 @@ def train(epochs, maps):
 
 
 
+train(2000,2)
 
-train(2000,1)
 
