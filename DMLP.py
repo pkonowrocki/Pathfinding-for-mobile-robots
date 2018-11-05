@@ -8,14 +8,18 @@ import pickle
 import time
 import matplotlib.pyplot as plt
 import ThetaStar
+import AStar
 import cv2 as cv
+import CAE
+
 Theta = ThetaStar.ThetaStar()
+A = AStar.AStar()
 
 def NotFeasible(start,end,n):
-        Theta.image = n[0,:,:]*255
-        Theta.startend(start,end)
-        Theta.discretize(40,40)
-        return Theta.theta()==None
+        A.image = n[0,:,:]*255
+        A.startend(start,end)
+        A.discretize(40,40)
+        return A.astar()==None
 
 def GenerateStartEnd(n):
     start = (np.random.randint(0,40),np.random.randint(0,40))
@@ -24,6 +28,31 @@ def GenerateStartEnd(n):
         start = (np.random.randint(0,40),np.random.randint(0,40))
         end = (np.random.randint(0,40),np.random.randint(0,40))
     return start, end
+
+def GenerateAStar():
+    temp = AStar.astar()[::-1]
+    res = np.zeros((len(temp),2),dtype=int)
+    for i in range(len(temp)):
+        res[i,0]=temp[i][0]
+        res[i,1]=temp[i][1]
+    return res
+
+def GenerateVector(S):
+    switch = {
+            (1,0):[1,0,0,0,0,0,0,0],
+            (1,1):[0,1,0,0,0,0,0,0],
+            (0,1):[0,0,1,0,0,0,0,0],
+            (-1,1):[0,0,0,1,0,0,0,0],
+            (-1,0):[0,0,0,0,1,0,0,0],
+            (-1,-1):[0,0,0,0,0,1,0,0],
+            (0,-1):[0,0,0,0,0,0,1,0],
+            (1,-1):[0,0,0,0,0,0,0,1]
+            }
+    res =np.expand_dims(np.array([0,0,0,0,0,0,0,0]),0)
+    for i in range(len(S)-1):
+        temp = (S[i+1][0]-S[i][0],S[i+1][1]-S[i][1])
+        res = np.append(res, np.expand_dims(np.array(switch[temp]),0), axis=0)
+    return res[1:,:]
 
 
 def GenerateMap():
@@ -36,13 +65,27 @@ def GenerateMap():
 
 def GenerateSet(size):
     res = list()
+    
     for i in range(size):
         m = GenerateMap()
         start, end = GenerateStartEnd(m)
-        S = Theta.theta()
-        res.append((m,start,end,S[::-1]))
+        S = GenerateVector(A.astar())
+        res.append((m,start,end,S[1:]))
     return res
-        
+
+def out2move(x):
+    switch = {
+            0:[1,0],
+            1:[1,1],
+            2:[0,1],
+            3:[-1,1],
+            4:[-1,0],
+            5:[-1,-1],
+            6:[0,-1],
+            7:[1,-1]
+            }
+    return switch[x]
+
 class Record():
     def __init__(self):
         self.S1=None
@@ -96,8 +139,9 @@ class DMLP(nn.Module):
         self.Linear10 = nn.Linear(64,32)
         self.PRELU10 = nn.PReLU()
         
-        self.Linear11 = nn.Linear(32,2)
+        self.Linear11 = nn.Linear(32,8)
         self.PRELU11 = nn.PReLU()
+        self.output = nn.Softmax()
         
     def forward(self, X):        
         X = self.PRELU0(self.Linear0(X))
@@ -122,36 +166,29 @@ class DMLP(nn.Module):
         #X = self.Dropout9(X)
         X = self.PRELU10(self.Linear10(X))
         X = self.PRELU11(self.Linear11(X))
-        return X
+        return self.output(X)
     
 device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
 print(device)
 
 def train(epochs, maps):
     net = DMLP().to(device)
-    cae = torch.load('cae_models/cae_980.pth', map_location=device)
-    criterion = nn.MSELoss().to(device)
+    cae = torch.load('cae_models/cae_2.pth', map_location=device)
+    criterion = nn.BCELoss().to(device)
     optimizer = optim.Adagrad(net.parameters(),0.1)
-    maps=2
-    training = GenerateSet(maps)
     running_loss=0.0
     time0 = time.time()
     last_time = time0
     for epoch in range(epochs):
         for i in range(maps):
-            i=0
-            INPUT = torch.cat((cae(torch.from_numpy(training[i][0][0,:,:]).float())[0],torch.tensor([[training[i][1][0],training[i][1][1],training[i][2][0],training[i][2][1]]]).float()),1)
-            OUTPUT = torch.tensor(training[i][3])
-            for _ in range(len(training[i][3])-1):
-                print(cae(torch.from_numpy(training[i][0][0,:,:]).float())[0])
-                INPUT = torch.cat((INPUT, 
-                                   torch.cat((cae(torch.from_numpy(training[i][0][0,:,:]).float())[0],torch.tensor([[training[i][1][0],training[i][1][1],training[i][2][0],training[i][2][1]]]).float()),1)),0)
+            r = pickle.load(open('training/map'+str(i)+'.p','rb'))
             optimizer.zero_grad()
-            outputs = net(INPUT).to(device)
-            loss = criterion(outputs,OUTPUT.float().to(device)).to(device)
+            inputs = torch.tensor([cae(torch.from_numpy(r.INPUT[:,0,:,:]).float().to(device))[0], torch.from_numpy(r.S1).float(), torch.from_numpy(r.S2).float(), torch.tensor([r.END[0],r.END[1]])])
+            outputs = net(inputs).to(device)
+            loss = criterion(outputs,torch.from_numpy(r.OUTPUT).float().to(device)).to(device)
             loss.backward()
             optimizer.step()
-            running_loss += loss.item()/len(training[i][3])
+            running_loss += loss.item()/len(r.S2)
         time_elapsed = time.time()-last_time
         time_all = (time.time()-time0)*(epochs/(epoch+1))
         print('Epoch: ['+str(epoch+1)+'/'+str(epochs)+']\tLoss: '+str(np.round(running_loss/(maps),6))+',\tTime elapsed: '+str(np.round(time_elapsed,1))+'[s],\tTime left: '+str(np.round(time_all-time_elapsed,1))+'[s]\t=>'+str(np.round(time_elapsed/time_all*100,3))+'%')        
