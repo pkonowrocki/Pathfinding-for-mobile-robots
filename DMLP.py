@@ -196,7 +196,7 @@ def train(epochs, maps):
         torch.save(net,'dmlp_models/dmlp_e'+str(epoch)+'.pth')
 
 
-
-train(2000,2)
+if __name__ == '__main__':
+    train(2000,2)
 
 

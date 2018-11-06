@@ -1,8 +1,10 @@
 import numpy as np
 import cv2 as cv
 import sys
+import time
+import matplotlib.pyplot as plot
 class ThetaStar:
-    def theta(self):
+    def compute(self):
         self.gScore={}
         self.gScore[self.start_cell] = 0
         self.parent = {}
@@ -51,7 +53,7 @@ class ThetaStar:
                 m=y[1]
             for i in range(int(a),int(b)):
                 c=np.floor(  (y[1]-x[1])/(y[0]-x[0])*(i-a)+m)
-                if(c<self.discrete.shape[1] and self.image[int(i),int(c)]):
+                if(self.image[int(i),int(c)]!=0):
                     return False
         return True
        
@@ -75,12 +77,12 @@ class ThetaStar:
     def reconstruct_path(self,s):
         curr = s
         result = list()
-        #result.append(self.end[::-1])
+        result.append(self.end[::-1])
         while(curr!=self.parent[curr]):
             result.append((int(self.cell_m*(curr[1]+0.5)),int(self.cell_n*(curr[0]+0.5))))
             curr = self.parent[curr]
         result.append((int(self.cell_m*(curr[1]+0.5)),int(self.cell_n*(curr[0]+0.5))))
-        #result.append(self.start[::-1])
+        result.append(self.start[::-1])
         return result
         
         
@@ -96,10 +98,12 @@ class ThetaStar:
     def heuristic(self, x):
         return abs(x[0]-self.end_cell[0])+abs(x[1]-self.end_cell[1])
     
+    def mapread(self, m):
+        self.image = m*255
+        return self.image
     
     def imread(self,path):
         self.image =  cv.threshold(cv.bitwise_not(cv.imread(path,0)), 127, 255, cv.THRESH_BINARY)[1]
-        self.tab={}
         return self.image
     
     def startend(self, start, end):
@@ -138,3 +142,17 @@ class ThetaStar:
                 n[self.cell_n*i:self.cell_n*(i+1),self.cell_m*j:self.cell_m*(j+1)] = self.discrete[i,j]
         return n
     
+if __name__=='__main__':
+    start_time = time.time()
+    alg = ThetaStar()
+    alg.imread('map.jpg')
+    alg.startend((1,511),(511,1))
+    alg.discretize(8,8)
+    p = alg.compute()
+    print("--- %s seconds ---" % (time.time() - start_time))
+
+
+    resultim = alg.image#alg.dicretized_im()
+    for i in range(len(p)-1):
+        cv.line(resultim,p[i+1][::1],p[i][::1],120,2)
+    plot.imshow(resultim)

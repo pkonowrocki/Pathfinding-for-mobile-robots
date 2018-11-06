@@ -9,6 +9,9 @@ import time
 import matplotlib.pyplot as plot
 import cv2 as cv
 import math
+device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
+print(device)
+
 
 def GenerateMap(x):
     tempmap = np.zeros([10,10])
@@ -66,10 +69,6 @@ class CAE(nn.Module):
         h = self.encoder(x)
         d = self.decoder(h)
         return h, d
-    
-device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
-print(device)
-
 
 def GenerateSet(batches, in_batch):
     training = list()
@@ -121,17 +120,9 @@ def test(epochs,maps):
         plot.plot(running_loss)
         plot.show()
 
-train(2000,30000,10)
-#test(1000,1000)
-cae = torch.load('cae_models/cae_999.pth', map_location=device)
-criterion = nn.BCELoss()
-m = nn.Sigmoid()
-mapa = GenerateSet(1,1)
-outputs = m(cae(mapa[0].float().to(device))[1]).detach().numpy()[0,0,:,:]
-mapa =mapa[0].detach().numpy()[0,:,:]
-plot.subplot(121)
-plot.imshow(mapa)
-plot.subplot(122)
-plot.imshow(np.round(outputs))
+if __name__ == '__main__':
+    train(2000,30000,10)
+    test(1000,1000)
+
 
         

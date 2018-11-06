@@ -8,6 +8,9 @@ import pickle
 import time
 import matplotlib.pyplot as plt
 
+device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
+print(device)
+
 class Record():
     def __init__(self):
         self.S1=None
@@ -52,8 +55,7 @@ class VIN(nn.Module):
         res = self.output(q_out)
         return res
     
-device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
-print(device)
+
 
 def train(epochs, maps):
     net = VIN().to(device)
@@ -139,6 +141,6 @@ def test_epoch(epoch, maps):
                     break
         print('VIN model after '+str(epoch+1)+' epochs,\tdone maps: ['+str(DONE)+'/'+str(maps)+']')
 
-train(2000,1450)
-
-test(2000,10,150)
+if __name__ == '__main__':
+    train(2000,1450)
+    test(2000,10,150)

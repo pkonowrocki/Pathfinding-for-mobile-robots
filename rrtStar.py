@@ -1,10 +1,12 @@
 import numpy as np
 import cv2 as cv
 import sys
+import time
+import matplotlib.pyplot as plot
 
 class RRTstar:
-
-    def compute(self, N):
+    def compute(self, N, dq):
+        self.dq = dq
         self.Nodes = set()
         self.T = {}
         self.cost = {}
@@ -32,7 +34,7 @@ class RRTstar:
                 if(self.dist(z_new,self.end)<self.dq and self.line_of_sight(z_new, self.end)):
                     feasible_path=True
                     self.insert_node(z_new,self.end)
-        return self.T
+        return self.T, i
         
     def rewire(self, Z_near, z_new, z_min):
         for x_near in Z_near:
@@ -66,7 +68,6 @@ class RRTstar:
         return result
         
     def steer(self, z_nearest, z_rand):
-        self.dq = 3
         if(z_rand==z_nearest):
             return z_rand
         z_new = (int(self.dq*(z_rand[0]-z_nearest[0])/self.dist(z_rand,z_nearest))+z_nearest[0],
@@ -110,8 +111,8 @@ class RRTstar:
             else:
                 m=y[1]
             for i in range(a,b):
-                c=np.round(  (y[1]-x[1])/(y[0]-x[0])*(i-a)+m)
-                if(self.image[int(i),int(c)]):
+                c=np.floor( (y[1]-x[1])/(y[0]-x[0])*(i-a)+m)
+                if(self.image[int(i),int(c)]!=0):
                     return False
         return True
     
@@ -133,10 +134,10 @@ class RRTstar:
             return False
         
     def sampling(self):
-#        x = (int(np.random.randint(0,self.image.shape[0])),
-#             int(np.random.randint(0,self.image.shape[1])))
-        x = (int(np.random.normal(self.end[0],self.image.shape[0])),
-             int(np.random.normal(self.end[1],self.image.shape[1])))
+        x = (int(np.random.randint(0,self.image.shape[0])),
+             int(np.random.randint(0,self.image.shape[1])))
+#        x = (int(np.random.normal(self.end[0],self.image.shape[0])),
+#             int(np.random.normal(self.end[1],self.image.shape[1])))
         return x
     
     def shorten(self):
@@ -151,19 +152,34 @@ class RRTstar:
         n.append(res[len(res)-1])
         return n
     
-    def shorten2(self):
-        n=list()
-        res = self.path()
-        n.append(res[0])
-        curr = res[0]
-        res=res[::-1]
-        while not (curr==self.start):
-            for i in res:
-                if(self.line_of_sight(i,curr)):
-                    curr=i
-                    n.append(i)
-        return n
             
-            
+if __name__ == '__main__':
+    alg = RRTstar()
+    start_time = time.time()
+    im = alg.imread('map.jpg')
+    alg.image = im 
+    alg.startend((5,5),(400,400))
+    tree,_ = alg.compute(1000,25)
+    path = alg.path()
+    short_path = alg.shorten()
+    print("--- %s seconds ---" % (time.time() - start_time))
+    for par in tree.keys():
+        for chil in tree[par]:
+            cv.line(im,par[::-1],chil[::-1],80,1)
+
+    for i in range(len(path)-1):
+        cv.line(im,path[i+1][::-1],path[i][::-1],200,2)
     
+    for i in range(len(short_path)-1):
+        cv.line(im,short_path[i+1][::-1],short_path[i][::-1],150,2)
+    plot.imshow(im)
+
+    print(alg.cost[alg.end])
+    Snp=0
+    for i in range(1,len(short_path)):
+        Snp = Snp + np.sqrt((short_path[i][1]-short_path[i-1][1])**2 + (short_path[i][0]-short_path[i-1][0])**2)
+    Sp=0
+    for i in range(1,len(path)):
+        Sp = Sp + np.sqrt((path[i][1]-path[i-1][1])**2 + (path[i][0]-path[i-1][0])**2)        
+
    

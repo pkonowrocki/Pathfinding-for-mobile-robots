@@ -138,6 +138,6 @@ def GenerateTestSet(maps):
         remaining_time = maps*(time.time()-zero_time)/(x+1)
         print('['+str(x+1)+'/'+str(maps)+'] Time for a map: '+str(time.time()-start_time)+'[s] Remaining time:' + str(remaining_time)+'[s]')
 
-
-GenerateTrainingSet(350,7)
-GenerateTestSet(150)
+if __name__ == '__main__':
+    GenerateTrainingSet(350,7)
+    GenerateTestSet(150)
