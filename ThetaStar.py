@@ -1,8 +1,10 @@
 import numpy as np
 import cv2 as cv
 import sys
+import time
+import matplotlib.pyplot as plot
 class ThetaStar:
-    def theta(self):
+    def compute(self):
         self.gScore={}
         self.gScore[self.start_cell] = 0
         self.parent = {}
@@ -11,7 +13,8 @@ class ThetaStar:
         self.o[self.start_cell] = self.gScore[self.start_cell]+self.heuristic(self.start_cell)
         self.c={}
         while len(self.o)>0:
-            s=self.o.popitem()[0]
+            s=min(self.o.keys(),key = lambda x:self.o[x])#self.o.popitem()[0]
+            self.o.pop(s)
             if s==self.end_cell:
                 self.res = list()
                 return self.reconstruct_path(s)
@@ -32,25 +35,28 @@ class ThetaStar:
                         self.update_vertex(s,y)
         return None
     
-    def line_of_sight(self, x, y):
-        if(x[0]>y[0]):
-            temp = y[0]
-            y=(x[0],y[1])
-            x = (temp,x[1])
-        if(x[1]>y[1]):
-            temp = y[1]
-            y = (y[0],x[1])
-            x = (x[0],temp)
-        kernel = np.zeros([int(abs(y[0]-x[0]))+1,int(abs(y[1]-x[1]))+1])
-        cv.line(kernel,(0,0),tuple(kernel.shape)[::-1],1,1)
-        if(kernel.shape[0]>0 and kernel.shape[1]>0):
-            kernel[0,0]=1
-            kernel[kernel.shape[0]-1,kernel.shape[1]-1]=1
-            if(np.sum(np.multiply(kernel, self.discrete[int(x[0]):int(y[0]+1),int(x[1]):int(y[1]+1)]))>0):
-                return False
+    def line_of_sight(self, x, y):        
+        x = ((x[0]+0.5)*self.cell_n,(x[1]+0.5)*self.cell_m)
+        y = ((y[0]+0.5)*self.cell_n,(y[1]+0.5)*self.cell_m)
+        if(x[0]==y[0]):
+            a=min([x[1],y[1]])
+            b=max([x[1],y[1]])+1
+            for i in range(int(a),int(b)):
+                if(self.image[int(x[0]),int(i)]):
+                    return False
+        else:
+            a=min([x[0],y[0]])
+            b=max([x[0],y[0]])+1
+            if(a==x[0]):
+                m=x[1]
             else:
-                return True
+                m=y[1]
+            for i in range(int(a),int(b)):
+                c=np.floor(  (y[1]-x[1])/(y[0]-x[0])*(i-a)+m)
+                if(self.image[int(i),int(c)]!=0):
+                    return False
         return True
+       
         
     def update_vertex(self, s, y):
         if(self.line_of_sight(self.parent[s], y)):
@@ -88,18 +94,21 @@ class ThetaStar:
     
     def dist(self, x,y):
         return abs(self.cell_n*(x[0]-y[0]))+abs(self.cell_n*(x[1]-y[1])) 
+    
     def heuristic(self, x):
         return abs(x[0]-self.end_cell[0])+abs(x[1]-self.end_cell[1])
     
+    def mapread(self, m):
+        self.image = m*255
+        return self.image
     
     def imread(self,path):
         self.image =  cv.threshold(cv.bitwise_not(cv.imread(path,0)), 127, 255, cv.THRESH_BINARY)[1]
-        self.tab={}
         return self.image
     
     def startend(self, start, end):
-        self.start = (start[1],start[0])
-        self.end = (end[1],end[0])
+        self.start = start[::-1]
+        self.end = end[::-1]
     
     def free(self, x):
         return self.discrete[int(x[0]),int(x[1])]==0
@@ -133,3 +142,17 @@ class ThetaStar:
                 n[self.cell_n*i:self.cell_n*(i+1),self.cell_m*j:self.cell_m*(j+1)] = self.discrete[i,j]
         return n
     
+if __name__=='__main__':
+    start_time = time.time()
+    alg = ThetaStar()
+    alg.imread('map.jpg')
+    alg.startend((1,511),(511,1))
+    alg.discretize(8,8)
+    p = alg.compute()
+    print("--- %s seconds ---" % (time.time() - start_time))
+
+
+    resultim = alg.image#alg.dicretized_im()
+    for i in range(len(p)-1):
+        cv.line(resultim,p[i+1][::1],p[i][::1],120,2)
+    plot.imshow(resultim)

@@ -1,16 +1,21 @@
 import numpy as np
 import cv2 as cv
 import sys
-class Diffusion:
-    def diffuse(self):
+import time
+import matplotlib.pyplot as plot
+
+class AStar: 
+    def compute(self):
         self.c = set()
         self.o = set()
         self.cameFrom = {}
         gScore={}
         gScore[self.start_cell] = 0
+        fScore = {}
+        fScore[self.start_cell] = self.heuristic(self.start_cell)
         self.o.add(self.start_cell)
         while (len(self.o)>0):
-            curr = min(self.o, key = lambda x: gScore[x])
+            curr = min(self.o, key = lambda x: fScore[x])
             if(curr==self.end_cell):
                 return self.reconstruct_path()
             self.o.remove(curr)
@@ -23,24 +28,25 @@ class Diffusion:
                     if y not in self.o:
                         self.o.add(y)
                         gScore[y] = sys.maxsize
+                        fScore[y] = sys.maxsize
                     elif (tentative_gScore >= gScore[y]):
                         continue
                     self.cameFrom[y] = curr
                     gScore[y] = tentative_gScore
-
-        
+                    fScore[y]= gScore[y]+self.heuristic(y)
+        return None
         
     
     
     def reconstruct_path(self):
         curr = self.end_cell
         result = list()
-        result.append(self.end[::-1])
+        #result.append(self.end[::-1])
         while(curr!=self.start_cell):
             result.append((int(self.cell_m*(curr[1]+0.5)),int(self.cell_n*(curr[0]+0.5))))
             curr = self.cameFrom[curr]
         result.append((int(self.cell_m*(curr[1]+0.5)),int(self.cell_n*(curr[0]+0.5))))
-        result.append(self.start[::-1])
+        #result.append(self.start[::-1])
         return result
         
         
@@ -49,11 +55,16 @@ class Diffusion:
     
     def dist(self, x,y):
         return abs(self.cell_n*(x[0]-y[0]))+abs(self.cell_n*(x[1]-y[1])) 
-
+    
+    def heuristic(self, x):
+        return abs(x[0]-self.end_cell[0])+abs(x[1]-self.end_cell[1])
+    
+    def mapread(self,m):
+        self.image = m*255
+        return self.image
     
     def imread(self,path):
         self.image =  cv.threshold(cv.bitwise_not(cv.imread(path,0)), 127, 255, cv.THRESH_BINARY)[1]
-        self.tab={}
         return self.image
     
     def startend(self, start, end):
@@ -92,3 +103,17 @@ class Diffusion:
                 n[self.cell_n*i:self.cell_n*(i+1),self.cell_m*j:self.cell_m*(j+1)] = self.discrete[i,j]
         return n
     
+    
+if __name__=='__main__':
+    start_time = time.time()
+    alg = AStar()
+    alg.imread('map.jpg')
+    alg.startend((1,511),(511,1))
+    alg.discretize(64,64)
+    path = alg.compute()
+    print("--- %s seconds ---" % (time.time() - start_time))
+
+    resultim = alg.image#alg.dicretized_im()
+    for i in range(len(path)-1):
+        cv.line(resultim,path[i+1][::1],path[i][::1],120,2)
+    plot.imshow(resultim)
