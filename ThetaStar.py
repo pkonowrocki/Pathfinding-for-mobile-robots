@@ -3,6 +3,16 @@ import cv2 as cv
 import sys
 import time
 import matplotlib.pyplot as plot
+
+def GenerateMap():
+    tempmap = np.zeros([10,10])
+    for i in range(np.random.randint(15,60)):
+        temp = (np.random.randint(0,10), np.random.randint(0,10))
+        tempmap[temp]=1
+    tempmap = np.round(cv.resize(tempmap,(40,40)))
+    return tempmap
+
+
 class ThetaStar:
     def compute(self):
         self.gScore={}
@@ -34,7 +44,7 @@ class ThetaStar:
                             self.parent[y] = None
                         self.update_vertex(s,y)
         return None
-    
+       
     def line_of_sight(self, x, y):        
         x = ((x[0]+0.5)*self.cell_n,(x[1]+0.5)*self.cell_m)
         y = ((y[0]+0.5)*self.cell_n,(y[1]+0.5)*self.cell_m)
@@ -53,10 +63,11 @@ class ThetaStar:
                 m=y[1]
             for i in range(int(a),int(b)):
                 c=np.floor(  (y[1]-x[1])/(y[0]-x[0])*(i-a)+m)
+                if(c >= self.image.shape[1]):
+                    c=self.image.shape[1]-1
                 if(self.image[int(i),int(c)]!=0):
                     return False
         return True
-       
         
     def update_vertex(self, s, y):
         if(self.line_of_sight(self.parent[s], y)):
@@ -77,12 +88,12 @@ class ThetaStar:
     def reconstruct_path(self,s):
         curr = s
         result = list()
-        result.append(self.end[::-1])
+#        result.append(self.end[::-1])
         while(curr!=self.parent[curr]):
             result.append((int(self.cell_m*(curr[1]+0.5)),int(self.cell_n*(curr[0]+0.5))))
             curr = self.parent[curr]
         result.append((int(self.cell_m*(curr[1]+0.5)),int(self.cell_n*(curr[0]+0.5))))
-        result.append(self.start[::-1])
+#        result.append(self.start[::-1])
         return result
         
         
@@ -130,7 +141,7 @@ class ThetaStar:
     
     
     def tab2matrix(self):        
-        n = np.ndarray([self.matrix.shape[0],self.matrix.shape[1]])
+        n = np.ndarray([self.discrete.shape[0],self.discrete.shape[1]])
         for p in self.donetab.keys():
             n[p[0],p[1]]=self.donetab[p]
         return n
@@ -143,16 +154,25 @@ class ThetaStar:
         return n
     
 if __name__=='__main__':
+    u = GenerateMap()
+    plot.imshow(u)
+    
+    fig = plot.figure(dpi=300)
+    plot.imshow(u)
+    fig.savefig('Thetastar.png')
+    
+    
+    
     start_time = time.time()
     alg = ThetaStar()
-    alg.imread('map.jpg')
-    alg.startend((1,511),(511,1))
-    alg.discretize(8,8)
+    aa = alg.imread('map.jpg')
+    alg.startend((39,39),(0,0))
+    alg.discretize(40,40)
     p = alg.compute()
     print("--- %s seconds ---" % (time.time() - start_time))
 
 
     resultim = alg.image#alg.dicretized_im()
     for i in range(len(p)-1):
-        cv.line(resultim,p[i+1][::1],p[i][::1],120,2)
+        cv.line(resultim,p[i+1][::1],p[i][::1],120,1)
     plot.imshow(resultim)

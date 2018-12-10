@@ -4,6 +4,14 @@ import sys
 import time
 import matplotlib.pyplot as plot
 
+def GenerateMap():
+    tempmap = np.zeros([10,10])
+    for i in range(np.random.randint(15,60)):
+        temp = (np.random.randint(0,10), np.random.randint(0,10))
+        tempmap[temp]=1
+    tempmap = np.round(cv.resize(tempmap,(40,40)))
+    return tempmap
+
 class AStar: 
     def compute(self):
         self.c = set()
@@ -11,11 +19,11 @@ class AStar:
         self.cameFrom = {}
         gScore={}
         gScore[self.start_cell] = 0
-        fScore = {}
-        fScore[self.start_cell] = self.heuristic(self.start_cell)
+        self.fScore = {}
+        self.fScore[self.start_cell] = self.heuristic(self.start_cell)
         self.o.add(self.start_cell)
         while (len(self.o)>0):
-            curr = min(self.o, key = lambda x: fScore[x])
+            curr = min(self.o, key = lambda x: self.fScore[x])
             if(curr==self.end_cell):
                 return self.reconstruct_path()
             self.o.remove(curr)
@@ -28,12 +36,12 @@ class AStar:
                     if y not in self.o:
                         self.o.add(y)
                         gScore[y] = sys.maxsize
-                        fScore[y] = sys.maxsize
+                        self.fScore[y] = sys.maxsize
                     elif (tentative_gScore >= gScore[y]):
                         continue
                     self.cameFrom[y] = curr
                     gScore[y] = tentative_gScore
-                    fScore[y]= gScore[y]+self.heuristic(y)
+                    self.fScore[y]= gScore[y]+self.heuristic(y)
         return None
         
     
@@ -51,13 +59,19 @@ class AStar:
         
         
     def neighbours(self, x):
-        return  [(x[0]+1,x[1]),(x[0]-1,x[1]),(x[0],x[1]+1),(x[0],x[1]-1),(x[0]-1,x[1]+1),(x[0]+1,x[1]-1),(x[0]-1,x[1]-1),(x[0]+1,x[1]+1)]
+        return  [(x[0]+1,x[1]),(x[0]-1,x[1]),(x[0],x[1]+1),(x[0],x[1]-1)]#,(x[0]-1,x[1]+1),(x[0]+1,x[1]-1),(x[0]-1,x[1]-1),(x[0]+1,x[1]+1)]
     
     def dist(self, x,y):
-        return abs(self.cell_n*(x[0]-y[0]))+abs(self.cell_n*(x[1]-y[1])) 
+        return np.sqrt((self.cell_n*(x[0]-y[0]))**2+(self.cell_m*(x[1]-y[1]))**2) 
     
     def heuristic(self, x):
-        return abs(x[0]-self.end_cell[0])+abs(x[1]-self.end_cell[1])
+        return (np.abs((self.cell_n*(x[0]-self.end_cell[0])))+np.abs((self.cell_m*(x[1]-self.end_cell[1]))))*8
+    
+#    def heuristic(self, x):
+#        return (np.abs((self.cell_n*(x[0]-self.end_cell[0])))+np.abs((self.cell_m*(x[1]-self.end_cell[1]))))
+
+#    def heuristic(self, x):
+#        return np.sqrt((self.cell_n*(x[0]-self.end_cell[0]))**2)+np.sqrt((self.cell_m*(x[1]-self.end_cell[1]))**2)
     
     def mapread(self,m):
         self.image = m*255
@@ -105,15 +119,41 @@ class AStar:
     
     
 if __name__=='__main__':
+    
+    
+    u = GenerateMap()
+    
+    fig = plot.figure(dpi=300)
+    plot.imshow(u)
+    fig.savefig('astar.png')
+    
     start_time = time.time()
     alg = AStar()
-    alg.imread('map.jpg')
-    alg.startend((1,511),(511,1))
-    alg.discretize(64,64)
+#    alg.imread('map.jpg')
+
+    
+   
+   
+    alg.mapread(u) 
+
+    alg.startend((0,0),(39,39))
+    plot.imshow(alg.discretize(40,40))
+    plot.show()
     path = alg.compute()
     print("--- %s seconds ---" % (time.time() - start_time))
 
-    resultim = alg.image#alg.dicretized_im()
-    for i in range(len(path)-1):
-        cv.line(resultim,path[i+1][::1],path[i][::1],120,2)
+    resultim = np.copy(alg.image)/255#alg.dicretized_im()
+    for i in path:
+        resultim[i[::-1]] = -1
+    fig = plot.figure(dpi=300)
     plot.imshow(resultim)
+    fig.savefig('astarManhRelax.png')
+
+    
+    mapa = np.copy(u)
+    for i in alg.c:
+        mapa[int(i[0]),int(i[1])] = -1
+    mapa[39,39] = -1
+    fig = plot.figure(dpi=300)
+    plot.imshow(mapa)
+    fig.savefig('astarManhNodesRelax.png')

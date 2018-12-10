@@ -47,10 +47,15 @@ class VIN(nn.Module):
         h = self.conv_h(X)
         r = self.conv_r(h)
         v = Variable(torch.zeros(r.size())).to(device)
-        for _ in range(60):
+#        print(r.size())
+#        plt.imshow(r[0,0,:,:].detach().numpy())
+#        plt.show()
+        for _ in range(35):
             rv = torch.cat((r,v),dim=1)
             q = self.conv_q(rv)
             v, _ = torch.max(q,1,True)
+            plt.imshow(v[10,0,:,:].detach().numpy())
+            plt.show()
         q_out = q[:,:,S1,S2][:,:,0] if q[:,:,S1,S2].dim()==3 else q[:,:,S1,S2]
         res = self.output(q_out)
         return res
@@ -66,7 +71,9 @@ def train(epochs, maps):
     last_time = time0
     for epoch in range(epochs):
         for i in range(maps):
-            r = pickle.load(open('training/map'+str(i)+'.p','rb'))
+            r = pickle.load(open('training/map'+str(2000)+'.p','rb'))
+            plt.imshow(r.INPUT[0,1,:,:])
+            plt.show()
             optimizer.zero_grad()
             outputs = net(torch.from_numpy(r.INPUT).float().to(device), torch.from_numpy(r.S1).long().to(device), torch.from_numpy(r.S2).long().to(device) ).to(device)
             loss = criterion(outputs,torch.from_numpy(r.OUTPUT).float().to(device)).to(device)
@@ -77,9 +84,8 @@ def train(epochs, maps):
         time_all = (time.time()-time0)*(epochs/(epoch+1))
         print('Epoch: ['+str(epoch+1)+'/'+str(epochs)+']\tLoss: '+str(np.round(running_loss/(maps),6))+',\tTime elapsed: '+str(np.round(time_elapsed,1))+'[s],\tTime left: '+str(np.round(time_all-time_elapsed,1))+'[s]\t=>'+str(np.round(time_elapsed/time_all*100,3))+'%')        
         running_loss=0.0  
-        torch.save(net,'vin_models/vin_e'+str(epoch+1)+'.pth')
-        if(epoch==5):
-            test_epoch(epoch,15)
+        #torch.save(net,'vin_models/vin_e'+str(epoch+1)+'.pth')
+        
  
 def out2move(x):
     switch = {
@@ -95,10 +101,10 @@ def out2move(x):
     return switch[x]
        
 def test(epochs, every_x_epoch, maps):
-    for i in range(epochs)[::-1]:
+    for i in range(epochs)[::1]:
         DONE = 0
-        net = torch.load('vin_models/vin_e'+str(every_x_epoch*(i+1)-1)+'.pth', map_location=device)
-        print('Loaded '+str(10*(i+1)-1)+' epochs')
+        net = torch.load('vin_models/vin_e'+str(every_x_epoch*(i+1))+'.pth', map_location=device)
+        print('Loaded '+str(every_x_epoch*(i+1))+' epoch')
         for m in range(maps):
             r = pickle.load(open('test/map'+str(m)+'.p','rb'))
             start = [r.START[0], r.START[1]]
@@ -116,18 +122,22 @@ def test(epochs, every_x_epoch, maps):
                 if(curr==end):
                     DONE+=1
                     break
-        print('VIN model after '+str(10*(i+1)-1)+' epochs,\tdone maps: ['+str(DONE)+'/'+str(maps)+']')
+        print('VIN model after '+str(every_x_epoch*(i+1))+' epochs,\tdone maps: ['+str(DONE)+'/'+str(maps)+']')
 
 def test_epoch(epoch, maps):
+    res = list()
     for i in range(1):
         DONE = 0
         net = torch.load('vin_models/vin_e'+str(epoch)+'.pth', map_location=device)
         for m in range(maps):
+            path = list()
             r = pickle.load(open('test/map'+str(m)+'.p','rb'))
             start = [r.START[0], r.START[1]]
             end = [r.END[0],r.END[1]]
             curr = start
+            path.append(curr)
             inp = r.INPUT[0,:,:,:]
+            inp2 = inp[0,:,:]
             for _ in range(len(r.S1)*4):  
                 try:
                     output = net(torch.from_numpy(inp).view(1,2,40,40).float().to(device), torch.from_numpy(np.array(curr[0])).long().to(device), torch.from_numpy(np.array(curr[1])).long().to(device))
@@ -136,11 +146,19 @@ def test_epoch(epoch, maps):
                 pos = output.cpu().detach().numpy()
                 move = out2move(np.argmax(pos))
                 curr = [curr[0]+move[0], curr[1]+move[1]]
+                path.append(curr)
                 if(curr==end):
+                    for step in path:
+                        inp2[(step[0],step[1])]=0.5
+                    res.append(inp2)
+                    plt.imshow(inp2)
+                    plt.show()
                     DONE+=1
                     break
-        print('VIN model after '+str(epoch+1)+' epochs,\tdone maps: ['+str(DONE)+'/'+str(maps)+']')
-
+        print('VIN model after '+str(epoch)+' epochs,\tdone maps: ['+str(DONE)+'/'+str(maps)+']')
+    return res
+    
 if __name__ == '__main__':
-    train(2000,1450)
-    test(2000,10,150)
+    train(1,1)
+    #test_epoch(1,150)
+    #test(200,10,150)

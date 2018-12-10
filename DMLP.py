@@ -11,7 +11,6 @@ import ThetaStar
 import AStar
 import cv2 as cv
 
-
 Theta = ThetaStar.ThetaStar()
 A = AStar.AStar()
 
@@ -93,6 +92,48 @@ class Record():
         self.OUTPUT=None
         self.INPUT=None
 
+class CAE(nn.Module):
+    def __init__(self):
+        super(CAE,self).__init__()
+        self.first = nn.Conv2d(1,1,5, padding=2,  bias=True)
+        self.firstP = nn.PReLU()
+        self.second = nn.Conv2d(in_channels=1,out_channels=1, kernel_size=3, padding=1, bias=True)
+        self.secondP = nn.PReLU()
+        self.third = nn.Conv2d(in_channels=1,out_channels=1, kernel_size=3, padding=1, bias=True)
+        self.thirdP = nn.PReLU()
+        self.output = nn.Linear(1600,30,False)
+        
+        self.input = nn.Linear(30,1600,False)
+        self.RthirdP = nn.PReLU()
+        self.Rthird = nn.Conv2d(in_channels=1,out_channels=1, kernel_size=3, padding=1, bias=True)
+        self.RsecondP = nn.PReLU()
+        self.Rsecond = nn.Conv2d(in_channels=1,out_channels=1, kernel_size=3, padding=1, bias=True)
+        self.RfirstP = nn.PReLU()
+        self.Rfirst = nn.Conv2d(in_channels=1,out_channels=1, kernel_size=5, padding=2, bias=True)
+        
+    def encoder(self, x):
+        x = self.first(x.view(-1,1,40,40))
+        x = self.firstP(x)
+        x = self.second(x)
+        x = self.secondP(x)
+        x = self.third(x) 
+        x = self.thirdP(x).view(-1,1600)
+        return self.output(x)
+    
+    def decoder(self, x):
+        x = self.input(x).view(-1,1,40,40)
+        x = self.RthirdP(x)
+        x = self.Rthird(x)
+        x = self.RsecondP(x)
+        x = self.Rsecond(x)
+        x = self.RfirstP(x)
+        return self.Rfirst(x)
+        
+    def forward(self, x):
+        h = self.encoder(x)
+        d = self.decoder(h)
+        return h, d
+
 class DMLP(nn.Module):
     def __init__(self):
         super(DMLP,self).__init__()        
@@ -141,7 +182,7 @@ class DMLP(nn.Module):
         
         self.Linear11 = nn.Linear(32,8)
         self.PRELU11 = nn.PReLU()
-        self.output = nn.Softmax()
+        self.output = nn.Softmax(1)
         
     def forward(self, X):        
         X = self.PRELU0(self.Linear0(X))
@@ -173,7 +214,7 @@ print(device)
 
 def train(epochs, maps):
     net = DMLP().to(device)
-    cae = torch.load('cae_models/cae_0.pth', map_location=device)
+    cae = torch.load('cae_models/cae_999.pth', map_location=device)
     criterion = nn.BCELoss().to(device)
     optimizer = optim.Adagrad(net.parameters(),0.1)
     running_loss=0.0
@@ -183,7 +224,11 @@ def train(epochs, maps):
         for i in range(maps):
             r = pickle.load(open('training/map'+str(i)+'.p','rb'))
             optimizer.zero_grad()
-            inputs = torch.tensor([cae(torch.from_numpy(r.INPUT[:,0,:,:]).float().to(device))[0], torch.from_numpy(r.S1).float(), torch.from_numpy(r.S2).float(), torch.tensor([r.END[0],r.END[1]])])
+            m = cae(torch.from_numpy(r.INPUT[:,0,:,:]).float().to(device))[0]
+            S1 = torch.from_numpy(r.S1).float().view(-1,1).to(device)
+            S2 = torch.from_numpy(r.S2).float().view(-1,1).to(device)
+            end =  torch.tensor([r.END[0],r.END[1]]).unsqueeze_(0).repeat(len(r.S1),1).float().to(device)
+            inputs = torch.cat((m,S1,S2,end),1).float()
             outputs = net(inputs).to(device)
             loss = criterion(outputs,torch.from_numpy(r.OUTPUT).float().to(device)).to(device)
             loss.backward()
@@ -197,6 +242,6 @@ def train(epochs, maps):
 
 
 if __name__ == '__main__':
-    train(2000,2)
+    train(2000,2450)
 
 

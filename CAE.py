@@ -80,7 +80,7 @@ def GenerateSet(batches, in_batch):
     return training
 
 def train(epochs,maps,batchsize):
-    cae = CAE()    
+    cae = CAE().to(device)    
     running_loss=0.0
     criterion = nn.BCELoss()
     optimizer = optim.Adagrad(cae.parameters(),0.1)

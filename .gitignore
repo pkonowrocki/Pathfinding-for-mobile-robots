@@ -10,3 +10,13 @@ vin_models
 cae_models
 test
 training
+/cae_models — kopia
+/dmlp_models
+/vin_models_old
+/astar.png
+/astarManhNodesRelax.png
+/astarManhRelax.png
+/ShortAstarPath.png
+/Thetastar.png
+/ThetastarNodes.png
+/ThetastarPath.png

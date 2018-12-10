@@ -12,7 +12,7 @@ def NotFeasible(start,end,n):
         AStar.image = n[0,:,:]*255
         AStar.startend(start,end)
         AStar.discretize(40,40)
-        return AStar.astar()==None
+        return AStar.compute()==None
 
 def Neighbours(x):        
     return  [(x[0]+1,x[1]),(x[0]-1,x[1]),(x[0],x[1]+1),(x[0],x[1]-1),(x[0]-1,x[1]+1),(x[0]+1,x[1]-1),(x[0]-1,x[1]-1),(x[0]+1,x[1]+1)]
@@ -21,7 +21,7 @@ def InBounds(x,n):
     return x[0]>=0 and x[0]<n.shape[1] and x[1]>=0 and x[1]<n.shape[2]
 
 def GenerateAStar():
-    temp = AStar.astar()[::-1]
+    temp = AStar.compute()[::-1]
     res = np.zeros((len(temp),2),dtype=int)
     for i in range(len(temp)):
         res[i,0]=temp[i][0]
@@ -139,5 +139,5 @@ def GenerateTestSet(maps):
         print('['+str(x+1)+'/'+str(maps)+'] Time for a map: '+str(time.time()-start_time)+'[s] Remaining time:' + str(remaining_time)+'[s]')
 
 if __name__ == '__main__':
-    GenerateTrainingSet(350,7)
+    #GenerateTrainingSet(350,7)
     GenerateTestSet(150)
